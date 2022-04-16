@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 
@@ -11,6 +11,41 @@ const config = {
     messagingSenderId: "22345632122",
     appId: "1:22345632122:web:33a8888c16831c8d4eaec3",
     measurementId: "G-NYPF38SF3B"
+}
+
+export const createUserProfileDocument = async (userAuth, additionalData) => {
+    console.log(userAuth)
+    if(!userAuth) return
+
+    try {
+        
+        const userRef = doc(firestore ,`users/${userAuth.uid}`)
+        const userSnap = await getDoc(userRef)
+    
+        console.log('createUserProfileDocument', userSnap.data())
+        console.log('createUserProfileDocument exists', userSnap.exists())
+
+        if(!userSnap.exists()) {
+            const {displayName, email} = userAuth
+            const createdAt = serverTimestamp()
+
+            try {
+                await setDoc(userRef, {
+                    displayName,
+                    email,
+                    createdAt,
+                    ...additionalData
+                })
+            } catch (error) {
+                console.error('creating user profile document at firestore', error)
+            }
+        }
+
+        return userRef
+    } catch (error) {
+        console.error('getting doc from firestore', error)
+    }
+
 }
 
 initializeApp(config);
